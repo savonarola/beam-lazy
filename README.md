@@ -335,7 +335,7 @@ to_cursor(RedisCursor) when is_binary(RedisCursor) -> RedisCursor.
 As we see, `qlc:table/2` has the only required argument: a function generating table values. It looks much like the `next_fun` argument of `Stream.resourse/3`, but there are some differences:
 * The generating functions return a simple list of elements to terminate, not a `{:halt, acc}` tuple.
 * To continue evaluation, the function should return an _improper list_ of calculated elements ending with a continuation function that calculates the rest.
-* We can't return an improper list with no elements. So we immediately make a recursive call if no keys are fetched, but the Redis cursor does not yet indicate the end of scanning (`"0"`).
+* We can't return an improper list with no elements. So we immediately make a recursive call if no keys are fetched, but the Redis cursor does not yet indicate the end of scanning (`"0"`). `SCAN` command _can_ return [zero results](https://redis.io/commands/scan/#number-of-elements-returned-at-every-scan-call).
 
 NB. An _improper_ list is a list with elements concatenated to some value other than an empty list:
 ```elixir
@@ -524,6 +524,9 @@ simple_join(Conn) ->
         ]),
 
     TextAuthorQH.
+
+key(Prefix, IdBin) ->
+    iolist_to_binary([Prefix, IdBin]).
 ```
 
 Let's try that in the shell:
@@ -901,7 +904,7 @@ OK
 
 We see that `qlc` scans as many posts as needed and then looks up user data for each. The whole tables are not scanned anymore. This can be done because we provide an appropriate lookup function.
 
-Now we can iterate through the whole joined table in constant memory. However, with the lookup join, _in our setup_ we make more Redis operations if read _the whole_ table. We fetch the same users over and over for different posts.
+Now we can iterate through the whole joined table in constant memory. However, with the lookup join, _in our s   etup_ we make more Redis operations if read _the whole_ table. We fetch the same users over and over for different posts.
 
 Finally, we do not verify keys passed to the lookup function against the key pattern for simplicity.
 
@@ -911,4 +914,4 @@ We tried out lazy sequence support in Elixir and Erlang.
 
 Elixir provides the powerful [`Stream`](https://hexdocs.pm/elixir/Stream.html) module. It has many functions for creating and composing streams. Moreover, the API is clean and understandable.
 
-Erlang provides the `qlc` module. It has a more sophisticated API, and some of its capabilities are available only at compile time. On the other hand, `qlc` can upgrade lazy sequences to _tables_ so that we can treat them as tables in a tiny built-in relational database, i.e., perform different kinds of joins, etc.
+Erlang provides the [`qlc`](https://www.erlang.org/doc/man/qlc.html) module. It has a more sophisticated API, and some of its capabilities are available only at compile time. On the other hand, `qlc` can upgrade lazy sequences to _tables_ so that we can treat them as tables in a tiny built-in relational database, i.e., perform different kinds of joins, etc.
