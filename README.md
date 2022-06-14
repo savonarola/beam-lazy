@@ -899,9 +899,9 @@ OK
 1655152183.532850 [0 127.0.0.1:49337] "HGETALL" "user:6"
 ```
 
-We see that `qlc` scans as many posts as needed and then looks up user data for each. This can be done because we provide an appropriate lookup function.
+We see that `qlc` scans as many posts as needed and then looks up user data for each. The whole tables are not scanned anymore. This can be done because we provide an appropriate lookup function.
 
-Now we can iterate through the whole table in constant memory. However, with the lookup join _in our setup_, we make more Redis operations. We fetch the same users over and over for different posts.
+Now we can iterate through the whole joined table in constant memory. However, with the lookup join, _in our setup_ we make more Redis operations if read _the whole_ table. We fetch the same users over and over for different posts.
 
 Finally, we do not verify keys passed to the lookup function against the key pattern for simplicity.
 
